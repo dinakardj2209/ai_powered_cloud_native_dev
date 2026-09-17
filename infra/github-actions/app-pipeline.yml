@@ -1,0 +1,29 @@
+# Example GitHub Actions pipeline visualized in the DevFlow Deployments tab.
+# Copy this into a product repo (e.g. food-delivery-app) as .github/workflows/deploy.yml
+
+name: Build, test, and deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  pipeline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install dependencies
+        run: npm ci
+      - name: Unit tests
+        run: npm test
+      - name: ESLint
+        run: npm run lint
+      - name: Build
+        run: npm run build
+      - name: Docker build
+        run: docker build -t $ECR_REGISTRY/app:${{ github.sha }} .
+      - name: Deploy
+        run: echo "Deploy image to ECS / EC2 via your AWS credentials"
