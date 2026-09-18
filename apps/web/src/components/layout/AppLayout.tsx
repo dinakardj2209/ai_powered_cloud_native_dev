@@ -1,4 +1,4 @@
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { matchPath, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
   FolderKanban,
@@ -28,9 +28,26 @@ const navItems = [
   { to: '/settings', icon: Settings, label: 'Settings' },
 ];
 
+/** Sidebar shortcuts redirect into /projects/:id/... so default prefix matching is wrong. */
+const NAV_ACTIVE_PATTERNS: Record<string, string[]> = {
+  '/dashboard': ['/dashboard'],
+  '/projects': ['/projects', '/projects/:id', '/projects/:id/tasks'],
+  '/repository': ['/repository', '/projects/:id/repository'],
+  '/ai-assistant': ['/ai-assistant', '/projects/:id/ai'],
+  '/deployments': ['/deployments', '/projects/:id/deployments'],
+  '/monitoring': ['/monitoring', '/projects/:id/monitoring'],
+  '/team': ['/team', '/projects/:id/team'],
+  '/settings': ['/settings', '/projects/:id/settings'],
+};
+
+function isNavItemActive(pathname: string, to: string) {
+  return (NAV_ACTIVE_PATTERNS[to] ?? [to]).some((pattern) => matchPath({ path: pattern, end: true }, pathname));
+}
+
 export function AppLayout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const handleLogout = async () => {
@@ -63,10 +80,11 @@ export function AppLayout() {
             <NavLink
               key={item.to}
               to={item.to}
-              className={({ isActive }) =>
+              end
+              className={() =>
                 cn(
                   'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
-                  isActive
+                  isNavItemActive(pathname, item.to)
                     ? 'bg-primary/10 text-primary'
                     : 'text-text-muted hover:bg-surface-hover hover:text-text',
                 )
